@@ -1,0 +1,254 @@
+conditions:
+
+
+**Exercise 4 (1.5 points)**
+
+Open the PAC4Ex4 project in IntelliJ. In the `edu.uoc.pac4` package of the `/src/test/java` directory, you'll find the file with the unit tests we provide. Additionally, you'll see that we provide the `SentimentAnalyzer` class, which contains 3 methods that need to be coded (TODO).
+
+So far, we have used simple data structures to store data (i.e., Java arrays), but there are many other types, such as maps (Map), sets (Set), or lists (List). Therefore, in this exercise, we will use some of these structures to store values associated with others, putting into practice the use of these structures.
+
+Specifically, we will code a class that allows analyzing the sentiments of different received texts, where keywords are analyzed and counted based on whether they represent a positive or negative sentiment. To do this, you'll see that the `SentimentAnalyzer` class has the `SENTIMENT_MAP` attribute, which determines the sentiment represented by each of the words it contains. As you may have noticed, the analysis carried out is a very simplified version of what a real sentiment analyzer should be, but it does illustrate the basic idea.
+
+Code the following methods following these instructions:
+
+- **determineSentiment**: This method receives a map (`sentimentCounters`) where the key corresponds to the type of sentiment (positive or negative) and the value contains the number of words found that represent that sentiment. It should return the string "positive" if more positive words than negative words are found, "negative" if the opposite is true, and "neutral" in case of a tie.
+
+- **countSentimentWords**: This method receives a list of text strings (String) and should return a map of type `HashMap` where the key is a text string (String) representing the type of sentiment (positive or negative) and the value is an integer (Integer) indicating the number of words that have appeared in the text representing that sentiment. Note that all words from all received text strings should be processed. 
+  *Hint*: Investigate how to convert a string (String) to a Java array ignoring non-alphanumeric characters. This way, you can process the words one by one. 
+  This function should return a `HashMap` with two keys (positive and negative), and the value for each should be the total number of positive and negative words detected according to the classification made by `SENTIMENT_MAP`.
+
+- **analyzeTexts**: This method receives a list of text strings (String) and should return the type of sentiment that best fits the set of strings: positive, negative, or neutral. To do this, it should follow the instructions given in the previous methods, so this function should reuse the two methods mentioned above.
+
+**Minimum requirement to evaluate this exercise**: the program must pass the `testDetermineSentiment` test.
+
+**Note**: The student may receive a penalty of up to 0.5 points of the grade obtained in this exercise depending on the quality of the provided tests.
+(1.5 pts: 0.5 pts. `testDetermineSentiment`; 0.75 pts. `testCountSentimentWords`; 0.25 pts. `testAnalyzeTexts`)
+
+********************************************************************************
+
+code:
+
+package edu.uoc.pac4;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+public class SentimentAnalyzer {
+
+    private static final Map<String, String> SENTIMENT_MAP = Map.of(
+            "joy", "positive",
+            "love", "positive",
+            "hope", "positive",
+            "fear", "negative",
+            "hate", "negative",
+            "anger", "negative",
+            "sadness", "negative"
+    );
+
+    public String determineSentiment(Map<String, Integer> sentimentCounters) {
+        int positiveCount = sentimentCounters.getOrDefault("positive", 0);
+        int negativeCount = sentimentCounters.getOrDefault("negative", 0);
+
+        if (positiveCount > negativeCount) {
+            return "positive";
+        } else if (negativeCount > positiveCount) {
+            return "negative";
+        } else {
+            return "neutral";
+        }
+    }
+
+    public Map<String, Integer> countSentimentWords(List<String> texts) {
+        Map<String, Integer> sentimentCounters = new HashMap<>();
+
+        for (String text : texts) {
+            String[] words = text.toLowerCase().replaceAll("[^a-zA-Z ]", "").split("\\s+");
+            for (String word : words) {
+                String sentiment = SENTIMENT_MAP.get(word);
+                if (sentiment != null) {
+                    sentimentCounters.put(sentiment, sentimentCounters.getOrDefault(sentiment, 0) + 1);
+                }
+            }
+        }
+
+        return sentimentCounters;
+    }
+
+    public String analyzeTexts(List<String> texts) {
+        Map<String, Integer> sentimentCounters = countSentimentWords(texts);
+        return determineSentiment(sentimentCounters);
+    }
+}
+
+*************************************
+
+test: 
+
+package edu.uoc.pac4;
+
+import org.junit.jupiter.api.*;
+
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
+public class SentimentAnalyzerTest {
+
+    SentimentAnalyzer analyzer = new SentimentAnalyzer();
+
+    @Test
+    @Order(1)
+    @DisplayName("determineSentiment")
+    public void testDetermineSentiment() {
+        Map<String, Integer> sentimentCounters = Map.of("positive", 3, "negative", 1);
+        assertEquals("positive", analyzer.determineSentiment(sentimentCounters));
+
+        sentimentCounters = Map.of("positive", 1, "negative", 4);
+        assertEquals("negative", analyzer.determineSentiment(sentimentCounters));
+
+        sentimentCounters = Map.of("positive", 2, "negative", 2);
+        assertEquals("neutral", analyzer.determineSentiment(sentimentCounters));
+
+        sentimentCounters = Map.of();
+        assertEquals("neutral", analyzer.determineSentiment(sentimentCounters));
+    }
+
+    @Test
+    @Order(2)
+    @DisplayName("countSentimentWords")
+    void testCountSentimentWords() {
+        List<String> texts = List.of();
+        Map<String, Integer> sentimentCounters = analyzer.countSentimentWords(texts);
+        assertEquals(Map.of(), sentimentCounters);
+
+        texts = List.of(
+                "The quick brown fox jumps over the lazy dog.",
+                "Programming is fun and exciting."
+        );
+        sentimentCounters = analyzer.countSentimentWords(texts);
+        assertEquals(Map.of(), sentimentCounters);
+
+        texts = List.of(
+                "Joy and fear can coexist in life.",
+                "Love and hate are opposite emotions.",
+                "Hope can overcome sadness."
+        );
+        sentimentCounters = analyzer.countSentimentWords(texts);
+        assertEquals(Map.of("positive", 3, "negative", 3), sentimentCounters);
+
+        texts = List.of(
+                "Joy, joy, and more joy!",
+                "Love, love, and love again."
+        );
+        sentimentCounters = analyzer.countSentimentWords(texts);
+        assertEquals(Map.of("positive", 6), sentimentCounters);
+
+        texts = List.of(
+                "JOY and Love are powerful.",
+                "joy and LOVE bring peace."
+        );
+        sentimentCounters = analyzer.countSentimentWords(texts);
+        assertEquals(Map.of("positive", 5), sentimentCounters);
+
+        texts = List.of(
+                "Joy! Love? Hope, anger; sadness."
+        );
+        sentimentCounters = analyzer.countSentimentWords(texts);
+        assertEquals(Map.of("positive", 3, "negative", 2), sentimentCounters);
+
+        texts = List.of(
+                "JOY, joy, and LOVE! Fear? Sadness...",
+                "HATE, hate, and ANGER."
+        );
+        sentimentCounters = analyzer.countSentimentWords(texts);
+        assertEquals(Map.of("positive", 3, "negative", 5), sentimentCounters);
+    }
+
+    @Test
+    @Order(3)
+    @DisplayName("analyzeTexts")
+    void testAnalyzeTexts() {
+        List<String> texts;
+        String result;
+
+        texts = List.of();
+        result = analyzer.analyzeTexts(texts);
+        assertEquals("neutral", result);
+
+        texts = List.of(
+                "The quick brown fox jumps over the lazy dog.",
+                "Programming is fun and exciting."
+        );
+        result = analyzer.analyzeTexts(texts);
+        assertEquals("neutral", result);
+
+        texts = List.of(
+                "Joy and fear can coexist in life.",
+                "Love and hate are opposite emotions.",
+                "Hope can overcome sadness."
+        );
+        result = analyzer.analyzeTexts(texts);
+        assertEquals("neutral", result);
+
+        texts = List.of(
+                "Joy, joy, and more joy!",
+                "Love, love, and love again."
+        );
+        result = analyzer.analyzeTexts(texts);
+        assertEquals("positive", result);
+
+        texts = List.of(
+                "JOY and Love are powerful.",
+                "joy and LOVE bring peace."
+        );
+        result = analyzer.analyzeTexts(texts);
+        assertEquals("positive", result);
+
+        texts = List.of(
+                "Joy! Love? Hope, anger; sadness."
+        );
+        result = analyzer.analyzeTexts(texts);
+        assertEquals("positive", result);
+
+        texts = List.of(
+                "JOY, joy, and LOVE! Fear? Sadness...",
+                "HATE, hate, and ANGER."
+        );
+        result = analyzer.analyzeTexts(texts);
+        assertEquals("negative", result);
+
+        texts = List.of(
+                "Anger and sadness consume our thoughts.",
+                "Fear and hate dominate the world."
+        );
+        result = analyzer.analyzeTexts(texts);
+        assertEquals("negative", result);
+
+        texts = List.of(
+                "Peace, love, and hope are essential for joy.",
+                "Hate, anger, and fear destroy happiness."
+        );
+        result = analyzer.analyzeTexts(texts);
+        assertEquals("positive", result);
+
+        texts = List.of("Joy.");
+        result = analyzer.analyzeTexts(texts);
+        assertEquals("positive", result);
+
+        texts = List.of("Sadness.");
+        result = analyzer.analyzeTexts(texts);
+        assertEquals("negative", result);
+
+        texts = Collections.nCopies(1000, "Love and hate.");
+        result = analyzer.analyzeTexts(texts);
+        assertEquals("neutral", result);
+    }
+
+}
+
+
+
